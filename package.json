@@ -8,7 +8,6 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "connect-session-sequelize": "^8.0.0",
     "cors": "^2.8.5",
@@ -18,5 +17,14 @@
     "pg": "^8.16.2",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sillyphineas71/clone-bbus-project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sillyphineas71/clone-bbus-project/issues"
+  },
+  "homepage": "https://github.com/sillyphineas71/clone-bbus-project#readme",
+  "description": ""
 }
