@@ -1,0 +1,39 @@
+const express = require("express");
+const sequelize = require("./config/database-connect");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
+const app = express();
+
+// Allow JSON parsing
+app.use(bodyParser.json());
+
+// Allow CORS
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Connect to PostgreSQL
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log("Connected to PostgreSQL successfully");
+    return sequelize.sync();
+  })
+  .then(() => {
+    app.listen(8080, () => {
+      console.log("Server running on http://localhost:8080");
+    });
+  })
+  .catch((err) => {
+    console.error("Database connection error:", err.message);
+  });
