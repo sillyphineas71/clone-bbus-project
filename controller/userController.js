@@ -1,4 +1,4 @@
-const { TblUser, TblRole } = require("../model");
+const { tbl_user: User, tbl_role: Role } = require("../model");
 const { Op } = require("sequelize");
 
 exports.getUserList = (req, res, next) => {
@@ -16,7 +16,7 @@ exports.getUserList = (req, res, next) => {
   const include = [];
   if (roleName) {
     include.push({
-      model: TblRole,
+      model: Role,
       as: "roles",
       where: { name: roleName },
       through: { attributes: [] },
@@ -29,7 +29,7 @@ exports.getUserList = (req, res, next) => {
     order.push([field, (dir || "").toUpperCase() === "DESC" ? "DESC" : "ASC"]);
   }
 
-  TblUser.findAndCountAll({
+  User.findAndCountAll({
     where,
     include,
     order,
@@ -53,5 +53,11 @@ exports.getUserList = (req, res, next) => {
         },
       });
     })
-    .catch((err) => next(err));
+    .catch((err) => {
+      console.error("SequelizeError.message:", err.message);
+      if (err.parent) {
+        console.error("SequelizeError.parent:", err.parent);
+      }
+      next(err);
+    });
 };
