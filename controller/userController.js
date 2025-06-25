@@ -64,17 +64,18 @@ exports.getUserList = (req, res, next) => {
       next(err);
     });
 };
-//POST --- CREATE USER
-exports.createUser = (req, res, next) => {
-  const { email, phone, name, gender, dob, address, role } = req.body;
-
-   //Xử lý avatar
+exports.createUser = async (req, res, next) => {
+  try {
+    const { email, phone, name, gender, dob, address, role } = req.body;
     const avatar = req.file ? req.file.originalname : null;
-  //Xử lý password và hashpassword
-  const rawPassword = crypto.randomBytes(6).toString('base64');
-  bcrypt.hash(rawPassword ,12)
-  .then(hashPassword => {//tao user
-   return User.create({
+
+
+    // Sinh password ngẫu nhiên và hash
+    const rawPassword = crypto.randomBytes(6).toString('base64');
+    const hashPassword = await bcrypt.hash(rawPassword, 12);
+
+    //  Tạo user
+    const user = await User.create({
       id: uuidv4(),
       name, gender, dob, email, phone, address,
       username: rawPassword,
@@ -83,25 +84,27 @@ exports.createUser = (req, res, next) => {
       type: 'USER',
       status: 'ACTIVE'
     });
-  }).then(user => { // gan role
-    const roleUser = Role.findOne({where : { name :  role  }});
-    const userHasRole =  UserHasRole.create({
+
+    // Gán role
+    const roleUser = await Role.findOne({ where: { name: role } });
+    if (!roleUser) {
+      return res.status(400).json({ message: 'Role not found' });
+    }
+    await UserHasRole.create({
       id: uuidv4(),
-      role_id : roleUser.id,
-      user_id : user.id
+      role_id: roleUser.id,
+      user_id: user.id
     });
-     // Tạo entity phụ
-    if (role === 'PARENT')  Parent.create({ id: uuidv4(),userId: user.id });
-    if (role === 'DRIVER')  Driver.create({id: uuidv4(), userId: user.id });
-    if (role === 'ASSISTANT')  Assistant.create({ id: uuidv4(),userId: user.id });
-    if (role === 'TEACHER')  Teacher.create({ id: uuidv4(),userId: user.id });
 
-        return res.status(201).json({ status: 201, message: 'user created successfully', data: user.id });
-  })
+    // Tạo entity phụ
+    if (role === 'PARENT') await Parent.create({ id: uuidv4(), userId: user.id });
+    if (role === 'DRIVER') await Driver.create({ id: uuidv4(), userId: user.id });
+    if (role === 'ASSISTANT') await Assistant.create({ id: uuidv4(), userId: user.id });
+    if (role === 'TEACHER') await Teacher.create({ id: uuidv4(), userId: user.id });
 
-    .catch((err) => {
-      return res.status(500).json({ message: err.message });
-
-  });
-
+    //Trả về kết quả
+    return res.status(201).json({ status: 201, message: 'user created successfully', data: user.id });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
