@@ -1,9 +1,11 @@
+
 const { tbl_user: User, tbl_role: Role, tbl_user_has_role : UserHasRole } = require("../model");
 const {tbl_driver: Driver, tbl_parent: Parent, tbl_teacher: Teacher, tbl_assistant: Assistant} = require("../model");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+
 exports.getUserList = (req, res, next) => {
   const { keyword, roleName, sort, page = 0, size = 100000 } = req.query;
 
@@ -64,6 +66,64 @@ exports.getUserList = (req, res, next) => {
       next(err);
     });
 };
+
+
+exports.getUserById = (req, res, next) => {
+  const userId = req.params.userId;
+  console.log("getUserById userId:", userId);
+  UserHasRole.findAll({
+    where: {
+      user_id: userId,
+    },
+    include: [
+      {
+        model: Role,
+        as: "role",
+        attributes: ["name"],
+      },
+      {
+        model: User,
+        as: "user",
+      },
+    ],
+  })
+    .then((records) => {
+      if (!records.length) {
+        return res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      }
+      const isAdmin = records.some(
+        ({ role }) =>
+          role && (role.name === "ADMIN" || role.name === "SYSADMIN")
+      );
+      if (!isAdmin) {
+        return res.status(403).json({
+          status: 403,
+          message: "You are not allowed to access this resource",
+        });
+      }
+      return records[0].user;
+    })
+    .then((user) => {
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      res.status(200).json({
+        status: 200,
+        message: "get user detail",
+        data: user,
+      });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+
 //POST --- CREATE USER
 exports.createUser = (req, res, next) => {
   const { email, phone, name, gender, dob, address, role } = req.body;
