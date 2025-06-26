@@ -32,7 +32,7 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: message, errors: errors });
 });
 
-app.use("/user", require("./routes/userRoutes"));
+app.use("/user", require("./routes/UserRoutes"));
 
 // Connect to PostgreSQL
 sequelize
@@ -42,7 +42,7 @@ sequelize
     return sequelize.sync();
   })
   .then(() => {
-   app.use("/user", require("./routes/userRoutes"));
+    app.use("/user", require("./routes/UserRoutes"));
 
     // Start server
     app.listen(8090, () => {
