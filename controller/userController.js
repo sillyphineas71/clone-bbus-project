@@ -1,9 +1,20 @@
-const { tbl_user: User, tbl_role: Role, tbl_user_has_role : UserHasRole } = require("../model");
-const {tbl_driver: Driver, tbl_parent: Parent, tbl_teacher: Teacher, tbl_assistant: Assistant} = require("../model");
-const { Op } = require("sequelize");
-const { v4: uuidv4 } = require('uuid');
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
+const {
+  tbl_user: User,
+  tbl_role: Role,
+  tbl_user_has_role: UserHasRole,
+} = require("../model");
+const {
+  tbl_driver: Driver,
+  tbl_parent: Parent,
+  tbl_teacher: Teacher,
+  tbl_assistant: Assistant,
+} = require("../model");
+const { Op, where } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
+const xlsx = require("xlsx");
+const fs = require("fs");
 exports.getUserList = (req, res, next) => {
   const { keyword, roleName, sort, page = 0, size = 100000 } = req.query;
 
@@ -64,46 +75,200 @@ exports.getUserList = (req, res, next) => {
       next(err);
     });
 };
-exports.createUser = async (req, res, next) => {
+
+exports.getUserById = (req, res, next) => {
+  const userId = req.params.userId;
+  console.log("getUserById userId:", userId);
+  UserHasRole.findAll({
+    where: {
+      user_id: userId,
+    },
+    include: [
+      {
+        model: Role,
+        as: "role",
+        attributes: ["name"],
+      },
+      {
+        model: User,
+        as: "user",
+      },
+    ],
+  })
+    .then((records) => {
+      if (!records.length) {
+        return res.status(404).json({
+          status: 404,
+          message: "User not found",
+        });
+      }
+      const isAdmin = records.some(
+        ({ role }) =>
+          role && (role.name === "ADMIN" || role.name === "SYSADMIN")
+      );
+      if (!isAdmin) {
+        return res.status(403).json({
+          status: 403,
+          message: "You are not allowed to access this resource",
+        });
+      }
+      return records[0].user;
+    })
+    .then((user) => {
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      res.status(200).json({
+        status: 200,
+        message: "get user detail",
+        data: user,
+      });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+//POST --- CREATE USER
+exports.createUser = (req, res, next) => {
+  const { email, phone, name, gender, dob, address, role } = req.body;
+
+  //Xử lý avatar
+  const avatar = req.file ? req.file.originalname : null;
+  //Xử lý password và hashpassword
+  const rawPassword = crypto.randomBytes(6).toString("base64");
+  bcrypt
+    .hash(rawPassword, 12)
+    .then((hashPassword) => {
+      //tao user
+      return User.create({
+        id: uuidv4(),
+        name,
+        gender,
+        dob,
+        email,
+        phone,
+        address,
+        username: rawPassword,
+        password: hashPassword,
+        avatar,
+        type: "USER",
+        status: "ACTIVE",
+      });
+    })
+    .then((user) => {
+      // gan role
+      const roleUser = Role.findOne({ where: { name: role } });
+      const userHasRole = UserHasRole.create({
+        id: uuidv4(),
+        role_id: roleUser.id,
+        user_id: user.id,
+      });
+      // Tạo entity phụ
+      if (role === "PARENT") Parent.create({ id: uuidv4(), userId: user.id });
+      if (role === "DRIVER") Driver.create({ id: uuidv4(), userId: user.id });
+      if (role === "ASSISTANT")
+        Assistant.create({ id: uuidv4(), userId: user.id });
+      if (role === "TEACHER") Teacher.create({ id: uuidv4(), userId: user.id });
+
+      return res.status(201).json({
+        status: 201,
+        message: "user created successfully",
+        data: user.id,
+      });
+    })
+
+    .catch((err) => {
+      return res.status(500).json({ message: err.message });
+    });
+};
+
+exports.importUsers = async (req, res, next) => {
   try {
-    const { email, phone, name, gender, dob, address, role } = req.body;
-    const avatar = req.file ? req.file.originalname : null;
+    const file = req.file;
+    const roleName = req.body.roleName;
 
-
-    // Sinh password ngẫu nhiên và hash
-    const rawPassword = crypto.randomBytes(6).toString('base64');
-    const hashPassword = await bcrypt.hash(rawPassword, 12);
-
-    //  Tạo user
-    const user = await User.create({
-      id: uuidv4(),
-      name, gender, dob, email, phone, address,
-      username: rawPassword,
-      password: hashPassword,
-      avatar,
-      type: 'USER',
-      status: 'ACTIVE'
-    });
-
-    // Gán role
-    const roleUser = await Role.findOne({ where: { name: role } });
-    if (!roleUser) {
-      return res.status(400).json({ message: 'Role not found' });
+    if (!file || !roleName) {
+      return res.status(400).json({ message: "File và roleName là bắt buộc" });
     }
-    await UserHasRole.create({
-      id: uuidv4(),
-      role_id: roleUser.id,
-      user_id: user.id
+
+    // Kiểm tra role
+    const roleUser = await Role.findOne({ where: { name: roleName } });
+    if (!roleUser) {
+      return res.status(400).json({ message: "Role không tồn tại" });
+    }
+
+    const workbook = xlsx.readFile(file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const usersData = xlsx.utils.sheet_to_json(sheet);
+
+    const createUser = [];
+    const err = [];
+
+    for (const row of usersData) {
+      try {
+        const { email, phone, name, gender, dob, address } = row;
+
+        if (await User.findOne({ where: { email } })) {
+          err.push({ email, error: "Email đã tồn tại" });
+          continue;
+        }
+        if (await User.findOne({ where: { phone } })) {
+          err.push({ phone, error: "Phone đã tồn tại" });
+          continue;
+        }
+
+        const rawPassword = crypto.randomBytes(6).toString("base64");
+        const hashPassword = await bcrypt.hash(rawPassword, 12);
+
+        const user = await User.create({
+          id: uuidv4(),
+          name,
+          gender,
+          dob,
+          email,
+          phone,
+          address,
+          username: rawPassword,
+          password: hashPassword,
+          type: "USER",
+          status: "ACTIVE",
+        });
+
+        await UserHasRole.create({
+          id: uuidv4(),
+          role_id: roleUser.id,
+          user_id: user.id,
+        });
+
+        // Tạo entity phụ
+        if (roleName === "PARENT")
+          await Parent.create({ id: uuidv4(), userId: user.id });
+        if (roleName === "DRIVER")
+          await Driver.create({ id: uuidv4(), userId: user.id });
+        if (roleName === "ASSISTANT")
+          await Assistant.create({ id: uuidv4(), userId: user.id });
+        if (roleName === "TEACHER")
+          await Teacher.create({ id: uuidv4(), userId: user.id });
+
+        createUser.push({ id: user.id, name, email, phone });
+      } catch (errRow) {
+        err.push({ ...row, error: errRow.message });
+      }
+    }
+    // Xóa file sau khi xử lý
+    fs.unlinkSync(file.path);
+
+    return res.status(201).json({
+      status: 201,
+      message: "Import users completed",
+      created: createUser,
+      err,
     });
-
-    // Tạo entity phụ
-    if (role === 'PARENT') await Parent.create({ id: uuidv4(), userId: user.id });
-    if (role === 'DRIVER') await Driver.create({ id: uuidv4(), userId: user.id });
-    if (role === 'ASSISTANT') await Assistant.create({ id: uuidv4(), userId: user.id });
-    if (role === 'TEACHER') await Teacher.create({ id: uuidv4(), userId: user.id });
-
-    //Trả về kết quả
-    return res.status(201).json({ status: 201, message: 'user created successfully', data: user.id });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
