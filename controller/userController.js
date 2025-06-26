@@ -15,6 +15,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const xlsx = require("xlsx");
 const fs = require("fs");
+
 exports.getUserList = (req, res, next) => {
   const { keyword, roleName, sort, page = 0, size = 100000 } = req.query;
 
@@ -132,6 +133,7 @@ exports.getUserById = (req, res, next) => {
       next(err);
     });
 };
+
 //POST --- CREATE USER
 exports.createUser = (req, res, next) => {
   const { email, phone, name, gender, dob, address, role } = req.body;
