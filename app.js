@@ -3,6 +3,10 @@ const sequelize = require("./config/database-connect");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const models = require("./model");
+require("dotenv").config();
+
+console.log("ENV S3_BUCKET=", process.env.S3_BUCKET);
+console.log("ENV AWS_REGION=", process.env.AWS_REGION);
 
 const app = express();
 

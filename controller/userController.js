@@ -13,6 +13,7 @@ const { Op, where } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const { uploadAvatar } = require("../service/userService");
 
 exports.getUserList = (req, res, next) => {
   const { keyword, roleName, sort, page = 0, size = 100000 } = req.query;
@@ -174,16 +175,41 @@ exports.createUser = (req, res, next) => {
         Assistant.create({ id: uuidv4(), userId: user.id });
       if (role === "TEACHER") Teacher.create({ id: uuidv4(), userId: user.id });
 
-      return res
-        .status(201)
-        .json({
-          status: 201,
-          message: "user created successfully",
-          data: user.id,
-        });
+      return res.status(201).json({
+        status: 201,
+        message: "user created successfully",
+        data: user.id,
+      });
     })
 
     .catch((err) => {
       return res.status(500).json({ message: err.message });
+    });
+};
+
+exports.uploadImage = (req, res, next) => {
+  const avatars = req.files;
+
+  if (!avatars || avatars.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "No files uploaded",
+    });
+  }
+
+  uploadAvatar(avatars)
+    .then(() =>
+      res.status(201).json({
+        status: 201,
+        message: "upload images successfully",
+      })
+    )
+    .catch((err) => {
+      console.error("Upload error:", err);
+      res.status(500).json({
+        status: 500,
+        message: "File upload failed",
+        error: err.message,
+      });
     });
 };
