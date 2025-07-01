@@ -13,6 +13,9 @@ const { Op, where } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const xlsx = require("xlsx");
+const fs = require("fs");
+const userService = require('../service/userService');
 const { uploadAvatar } = require("../service/userService");
 
 exports.getUserList = (req, res, next) => {
@@ -134,57 +137,256 @@ exports.getUserById = (req, res, next) => {
 };
 
 //POST --- CREATE USER
-exports.createUser = (req, res, next) => {
-  const { email, phone, name, gender, dob, address, role } = req.body;
-
-  //Xử lý avatar
-  const avatar = req.file ? req.file.originalname : null;
-  //Xử lý password và hashpassword
-  const rawPassword = crypto.randomBytes(6).toString("base64");
-  bcrypt
-    .hash(rawPassword, 12)
-    .then((hashPassword) => {
-      //tao user
-      return User.create({
-        id: uuidv4(),
-        name,
-        gender,
-        dob,
-        email,
-        phone,
-        address,
-        username: rawPassword,
-        password: hashPassword,
-        avatar,
-        type: "USER",
-        status: "ACTIVE",
-      });
-    })
-    .then((user) => {
-      // gan role
-      const roleUser = Role.findOne({ where: { name: role } });
-      const userHasRole = UserHasRole.create({
-        id: uuidv4(),
-        role_id: roleUser.id,
-        user_id: user.id,
-      });
-      // Tạo entity phụ
-      if (role === "PARENT") Parent.create({ id: uuidv4(), userId: user.id });
-      if (role === "DRIVER") Driver.create({ id: uuidv4(), userId: user.id });
-      if (role === "ASSISTANT")
-        Assistant.create({ id: uuidv4(), userId: user.id });
-      if (role === "TEACHER") Teacher.create({ id: uuidv4(), userId: user.id });
-
-      return res.status(201).json({
-        status: 201,
-        message: "user created successfully",
-        data: user.id,
-      });
-    })
-
-    .catch((err) => {
-      return res.status(500).json({ message: err.message });
+exports.createUser = async (req, res, next) => {
+  try {
+    const user = await userService.createUser(req.body, req.file);
+    return res.status(201).json({
+      status: 201,
+      message: 'user created successfully',
+      data: user.id,
     });
+  } catch (err) {
+    console.error('Create User Error:', err.message);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+exports.importUsers = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const roleName = req.body.roleName;
+
+    if (!file || !roleName) {
+      return res.status(400).json({ message: "File và roleName là bắt buộc" });
+    }
+
+    // Kiểm tra role
+    const roleUser = await Role.findOne({ where: { name: roleName } });
+    if (!roleUser) {
+      return res.status(400).json({ message: "Role không tồn tại" });
+    }
+
+    const workbook = xlsx.readFile(file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const usersData = xlsx.utils.sheet_to_json(sheet);
+
+    const createUser = [];
+    const details = {}; // object lưu lỗi theo dòng
+
+    for (let i = 0; i < usersData.length; i++) {
+      const row = usersData[i];
+      const lineNumber = i + 2; // Nếu dòng 1 là header, dòng 2 là data đầu tiên
+
+      let errorMsg = "";
+
+      const { email, phone, name, gender, dob, address } = row;
+
+      if (await User.findOne({ where: { email } })) {
+        errorMsg += "Email đã tồn tại. ";
+      }
+      if (await User.findOne({ where: { phone } })) {
+        errorMsg += "Số điện thoại đã tồn tại. ";
+      }
+      // Có thể bổ sung các kiểm tra khác ở đây (ví dụ: validate định dạng...)
+
+      if (errorMsg) {
+        details[lineNumber] = `Lỗi dòng ${lineNumber}: ${errorMsg.trim()}`;
+        continue;
+      }
+
+      try {
+        const rawPassword = crypto.randomBytes(6).toString("base64");
+        const hashPassword = await bcrypt.hash(rawPassword, 12);
+
+        const user = await User.create({
+          id: uuidv4(),
+          name,
+          gender,
+          dob,
+          email,
+          phone,
+          address,
+          username: rawPassword,
+          password: hashPassword,
+          type: "USER",
+          status: "ACTIVE",
+        });
+
+        await UserHasRole.create({
+          id: uuidv4(),
+          role_id: roleUser.id,
+          user_id: user.id,
+        });
+
+        // Tạo entity phụ
+        if (roleName === "PARENT")
+          await Parent.create({ id: uuidv4(), user_id: user.id });
+        if (roleName === "DRIVER")
+          await Driver.create({ id: uuidv4(), user_id: user.id });
+        if (roleName === "ASSISTANT")
+          await Assistant.create({ id: uuidv4(), user_id: user.id });
+        if (roleName === "TEACHER")
+          await Teacher.create({ id: uuidv4(), user_id: user.id });
+
+        createUser.push({
+          user,
+          rolename: roleName,
+          accountNonExpired: true,
+          credentialsNonExpired: true,
+          accountNonLocked: true,
+        });
+      } catch (errRow) {
+        details[lineNumber] = `Lỗi dòng ${lineNumber}: ${errRow.message}`;
+      }
+    }
+    // Xóa file sau khi xử lý
+    fs.unlinkSync(file.path);
+
+    if (Object.keys(details).length > 0) {
+      return res.status(409).json({
+        status: 409,
+        message: "Import thất bại với nhiều lỗi trong file",
+        details,
+      });
+    }
+
+    return res.status(201).json({
+      status: 201,
+      message: "Import users completed",
+      created: createUser,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateUser = async (req, res, next) => {
+  try {
+    const { id, username, name, gender, dob, email, phone, address, status } =
+      req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "UserId is required" });
+    }
+    const existUser = await User.findByPk(id);
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    if (email) {
+      const existEmail = await User.findAll({
+        where: {
+          email: email,
+          id: { [Op.ne]: id }, // loai tru email da ton tai
+        },
+      });
+      if (existEmail.length > 0) {
+        return res.status(400).json({
+          message: `Email ${email} is existing`,
+        });
+      }
+    }
+    if (phone) {
+      const existPhone = await User.findAll({
+        where: {
+          phone: phone,
+          id: { [Op.ne]: id }, // loai tru email da ton tai
+        },
+      });
+      if (existPhone.length > 0) {
+        return res.status(400).json({
+          message: `Phone ${phone} is existing`,
+        });
+      }
+    }
+    //username, name, gender, dob, email, phone, address, status
+    const updateUser = {};
+    if (username != undefined) updateUser.username = username;
+    if (name != undefined) updateUser.name = name;
+    if (gender != undefined) updateUser.gender = gender;
+    if (dob != undefined) updateUser.dob = dob;
+    if (address != undefined) updateUser.address = address;
+    if (status != undefined) updateUser.status = status;
+
+    await User.update(updateUser, { where: { id: id } });
+    await User.findByPk(id);
+    return res.status(202).json({
+      status: 202,
+      message: "user updated successfully",
+      data: "",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { id, currentPassword, password, confirmPassword } = req.body;
+
+    if (!id || !currentPassword || !password || !confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Missing information to change password" });
+    }
+    // kiem tra user ton tai
+    const existUser = await User.findByPk(id);
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    //so sanh password hien tai
+    const isMatch = await bcrypt.compare(currentPassword, existUser.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+    //so sanh new password voi cf password
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "New password and confirm password are not the same",
+      });
+    }
+    // hash password va update user
+    const hashPassword = await bcrypt.hash(password, 12);
+    await User.update(
+      { password: hashPassword, username: password },
+      { where: { id: id } }
+    );
+    return res.status(202).json({
+      status: 202,
+      message: "user change password successfully",
+      data: "",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+exports.changeStatus = async (req, res, next) => {
+  try {
+    const { id, status } = req.body;
+
+    if (!id || !status) {
+      return res
+        .status(400)
+        .json({ message: "Missing id or status information" });
+    }
+
+    // kiem tra user ton tai
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User does not exist" });
+    }
+
+    // update status
+    await User.update({ status }, { where: { id } });
+
+    return res.status(202).json({
+      status: 202,
+      message: "user change status successfully",
+      data: "",
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
 
 exports.uploadImage = (req, res, next) => {

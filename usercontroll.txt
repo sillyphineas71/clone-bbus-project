@@ -1,0 +1,102 @@
+1. importUsers
+Method: POST /user/import
+Input: file Excel (form-data, key: file), roleName (string)
+Logic:
+Nhận file Excel và roleName.
+Gọi service để đọc file, import nhiều user vào DB.
+Nếu có lỗi trong file, trả về lỗi.
+Nếu thành công, trả về danh sách user đã tạo.
+Node.js:
+Dùng multer để nhận file.
+Dùng thư viện như xlsx để đọc file Excel.
+Lặp qua từng dòng, tạo user như logic createUser.
+Trả về kết quả.
+2. updateUser
+Method: PUT /user/upd
+Input: JSON body (UserUpdateRequest)
+Logic:
+Nhận thông tin user cần cập nhật (id, các trường cần sửa).
+Gọi service update user trong DB.
+Trả về status thành công.
+Node.js:
+Nhận body qua req.body.
+Tìm user theo id, cập nhật các trường.
+Trả về kết quả.
+3. updateUserAvatarLoggedIn
+Method: PATCH /user/upd-avatar-user-logged-in
+Input: form-data (avatar file)
+Logic:
+Lấy user đang đăng nhập (từ token/session).
+Nhận file avatar mới.
+Upload file, cập nhật trường avatar cho user.
+Trả về URL hoặc tên file avatar mới.
+Node.js:
+Xác thực user (JWT/session).
+Dùng multer nhận file.
+Lưu file vào thư mục uploads, cập nhật DB.
+Trả về tên file hoặc đường dẫn.
+4. updateUserAvatar
+Method: PATCH /user/upd-avatar
+Input: form-data (avatar file, id user)
+Logic:
+Nhận id user và file avatar mới.
+Upload file, cập nhật trường avatar cho user.
+Trả về status thành công.
+Node.js:
+Dùng multer nhận file.
+Lấy id user từ body hoặc query.
+Lưu file, cập nhật DB.
+Trả về kết quả.
+5. changePassword
+Method: PATCH /user/change-pwd
+Input: JSON body (UserPasswordRequest: id, password, confirmPassword)
+Logic:
+Kiểm tra password hợp lệ, trùng confirm.
+Hash password mới, cập nhật DB.
+Trả về status thành công.
+Node.js:
+Nhận body.
+Kiểm tra password, hash bằng bcrypt.
+Cập nhật DB.
+Trả về kết quả.
+6. changeStatus
+Method: PATCH /user/change-status
+Input: JSON body (UserUpdateRequest: id, status)
+Logic:
+Nhận id user và status mới.
+Cập nhật trường status cho user.
+Trả về status thành công.
+Node.js:
+Nhận body.
+Tìm user theo id, cập nhật status.
+Trả về kết quả.
+7. confirmEmail
+Method: GET /user/confirm-email?secretCode=...
+Input: Query param secretCode
+Logic:
+Kiểm tra mã xác thực email (chưa code chi tiết).
+Redirect về một trang (ví dụ: google.com).
+Node.js:
+Nhận query param.
+Kiểm tra mã xác thực (nếu có).
+Dùng res.redirect('https://google.com').
+8. deleteUser
+Method: DELETE /user/del/:userId
+Input: Path param userId
+Logic:
+Xóa (hoặc vô hiệu hóa) user theo id.
+Trả về status thành công.
+Node.js:
+Nhận id từ req.params.
+Xóa hoặc cập nhật status user trong DB.
+Trả về kết quả.
+9. getEntityByUserId
+Method: GET /user/entity/:userId
+Input: Path param userId
+Logic:
+Lấy user theo id.
+Dựa vào role, trả về entity phụ (Parent/Driver/Assistant).
+Node.js:
+Nhận id từ req.params.
+Tìm user, lấy role, truy vấn bảng phụ tương ứng.
+Trả về entity.
