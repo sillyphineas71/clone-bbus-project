@@ -1,7 +1,10 @@
+
+// services/userService.js
 const { tbl_user: User, tbl_role: Role, tbl_user_has_role: UserHasRole, tbl_driver: Driver, tbl_parent: Parent, tbl_teacher: Teacher, tbl_assistant: Assistant } = require('../model');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const s3Service = require("./s3Service");
 
 exports.createUser = async (userData, file) => {
   const { email, phone, name, gender, dob, address, role } = userData;
@@ -36,3 +39,19 @@ exports.createUser = async (userData, file) => {
 
   return user;
 }; 
+
+
+
+module.exports.uploadAvatar = function (avatars) {
+  const prefix = `admins/`;
+  const uploads = avatars.map((file) =>
+    s3Service.uploadFile(
+      prefix + file.originalname,
+      file.buffer,
+      file.size,
+      file.mimetype
+    )
+  );
+  return Promise.all(uploads);
+};
+
