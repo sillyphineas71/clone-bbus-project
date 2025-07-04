@@ -15,7 +15,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const xlsx = require("xlsx");
 const fs = require("fs");
-const userService = require('../service/userService');
+const userService = require("../service/userService");
 const { uploadAvatar } = require("../service/userService");
 
 exports.getUserList = (req, res, next) => {
@@ -142,11 +142,11 @@ exports.createUser = async (req, res, next) => {
     const user = await userService.createUser(req.body, req.file);
     return res.status(201).json({
       status: 201,
-      message: 'user created successfully',
+      message: "user created successfully",
       data: user.id,
     });
   } catch (err) {
-    console.error('Create User Error:', err.message);
+    console.error("Create User Error:", err.message);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -414,4 +414,99 @@ exports.uploadImage = (req, res, next) => {
         error: err.message,
       });
     });
+};
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    // kiem tra user ton tai
+    const existUser = await User.findOne({ where: { id: userId } });
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    // Lay role_id va Role name cua user
+    const { role_id } = await UserHasRole.findOne({
+      where: { user_id: userId },
+    });
+    const { name } = await Role.findOne({ where: { id: role_id } });
+    //Xoa tung bang cua nguoi dung
+    if (name === "PARENT") await Parent.destroy({ where: { user_id: userId } });
+    if (name === "DRIVER") await Driver.destroy({ where: { user_id: userId } });
+    if (name === "ASSISTANT")
+      await Assistant.destroy({ where: { user_id: userId } });
+    if (name === "TEACHER")
+      await Teacher.destroy({ where: { user_id: userId } });
+    //Xoa bang user_has_role
+    await UserHasRole.destroy({ where: { user_id: userId } });
+    //Xoa User
+    const userDelete = await User.destroy({ where: { id: userId } });
+    if (userDelete > 0) {
+      return res.status(202).json({
+        status: 202,
+        message: "User deleted successfully",
+        data: "",
+      });
+    } else {
+      return res.status(400).json({
+        status: 400,
+        message: "User not found or already deleted",
+        data: "",
+      });
+    }
+  } catch (err) {
+    console.error("Delete user failed:", err); // log đầy đủ
+
+    res.status(500).json({
+      status: 500,
+      message: "Delete user failed",
+      error: err?.message || "Internal server error",
+    });
+  }
+};
+exports.getEntityByUserId = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    // kiem tra user ton tai
+    const existUser = await User.findOne({ where: { id: userId } });
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    // Lay role_id va Role name cua user
+    const { role_id } = await UserHasRole.findOne({
+      where: { user_id: userId },
+    });
+    const { name } = await Role.findOne({ where: { id: role_id } });
+    let entity = null;
+    //kiem tra role cua user
+    if (name === "PARENT")
+      entity = await Parent.findOne({ where: { user_id: userId } });
+    else if (name === "DRIVER")
+      entity = await Driver.findOne({ where: { user_id: userId } });
+    else if (name === "ASSISTANT")
+      entity = await Assistant.findOne({ where: { user_id: userId } });
+    else if (name === "TEACHER")
+      entity = await Teacher.findOne({ where: { user_id: userId } });
+    else entity = null;
+    const data = {
+      id: entity.id,
+      createdAt: entity.createdAt,
+      updateAt: entity.updateAt,
+      user: {
+        existUser,
+        roleName: name,
+        accountNonExpired: true,
+        credentialsNonExpired: true,
+        accountNonLocked: true,
+      },
+    };
+    return res.status(200).json({
+      status: 200,
+      message: "get entity by user ID",
+      data: data,
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ status: 500, message: "Internal server error", data: null });
+  }
 };
