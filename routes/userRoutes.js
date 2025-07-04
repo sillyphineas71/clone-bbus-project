@@ -2,8 +2,8 @@ const router = require("express").Router();
 const { isAuth, checkRole } = require("../validators/authValidators");
 const userController = require("../controller/userController");
 const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() }, { dest: "uploads/" });
-
+const upload = multer({ storage: multer.memoryStorage() });
+const uploadExcel = multer({ dest: "uploads/" });
 //GET /user/list
 router.get("/list", userController.getUserList);
 
@@ -13,9 +13,8 @@ router.get("/:userId", userController.getUserById);
 //POST /user/add
 router.post("/add", userController.createUser);
 
-
 //POST /user/import
-router.post("/import", upload.single("file"), userController.importUsers);
+router.post("/import", uploadExcel.single("file"), userController.importUsers);
 
 //PUT /user/upd
 router.put("/upd", userController.updateUser);
@@ -30,7 +29,12 @@ router.post(
   userController.uploadImage
 );
 
-
-//PATCH /user/change-status
+//PATCH /change-status
 router.patch("/change-status", userController.changeStatus);
+
+//DELETE /del/{userId}
+router.delete("/del/:userId", userController.deleteUser);
+
+//GET /entity/{userId}
+router.get("/entity/:userId", userController.getEntityByUserId);
 module.exports = router;
