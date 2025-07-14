@@ -1,9 +1,10 @@
+require("dotenv").config();
+
 const express = require("express");
 const sequelize = require("./config/database-connect");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const models = require("./model");
-require("dotenv").config();
 
 console.log("ENV S3_BUCKET=", process.env.S3_BUCKET);
 console.log("ENV AWS_REGION=", process.env.AWS_REGION);
@@ -27,6 +28,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware
+app.use("/user", require("./routes/UserRoutes"));
+app.use("/auth", require("./routes/authRoutes"));
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.log(error);
@@ -44,8 +49,6 @@ sequelize
     return sequelize.sync();
   })
   .then(() => {
-    app.use("/user", require("./routes/userRoutes"));
-
     // Start server
     app.listen(8090, () => {
       console.log("Server running on http://localhost:8090");

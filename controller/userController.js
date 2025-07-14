@@ -415,6 +415,31 @@ exports.uploadImage = (req, res, next) => {
       });
     });
 };
+
+
+exports.updateAvatarUserLoggedIn = async (req, res, next) => {
+  const userId = req.userId;
+  const avatars = req.files;
+
+  if (!avatars || avatars.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "No files uploaded",
+    });
+  }
+
+  const avatar = avatars[0];
+  userService
+    .updateAvatarUserLoggedIn(userId, avatar)
+    .then((avatarUrl) => {
+      res.status(202).json({
+        status: 202,
+        message: "User updated successfully",
+        data: avatarUrl,
+      });
+    })
+    .catch((err) => next(err));
+
 exports.deleteUser = async (req, res, next) => {
   try {
     const userId = req.params.userId;
