@@ -15,7 +15,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const xlsx = require("xlsx");
 const fs = require("fs");
-const userService = require('../service/userService');
+const userService = require("../service/userService");
 const { uploadAvatar } = require("../service/userService");
 
 exports.getUserList = (req, res, next) => {
@@ -142,11 +142,11 @@ exports.createUser = async (req, res, next) => {
     const user = await userService.createUser(req.body, req.file);
     return res.status(201).json({
       status: 201,
-      message: 'user created successfully',
+      message: "user created successfully",
       data: user.id,
     });
   } catch (err) {
-    console.error('Create User Error:', err.message);
+    console.error("Create User Error:", err.message);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -414,4 +414,28 @@ exports.uploadImage = (req, res, next) => {
         error: err.message,
       });
     });
+};
+
+exports.updateAvatarUserLoggedIn = async (req, res, next) => {
+  const userId = req.userId;
+  const avatars = req.files;
+
+  if (!avatars || avatars.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "No files uploaded",
+    });
+  }
+
+  const avatar = avatars[0];
+  userService
+    .updateAvatarUserLoggedIn(userId, avatar)
+    .then((avatarUrl) => {
+      res.status(202).json({
+        status: 202,
+        message: "User updated successfully",
+        data: avatarUrl,
+      });
+    })
+    .catch((err) => next(err));
 };
