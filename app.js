@@ -45,7 +45,7 @@ sequelize
   })
   .then(() => {
     app.use("/user", require("./routes/userRoutes"));
-
+    app.use("/parent", require("./routes/parentRoutes"));
     // Start server
     app.listen(8090, () => {
       console.log("Server running on http://localhost:8090");
