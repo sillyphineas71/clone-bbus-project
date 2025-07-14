@@ -1,4 +1,5 @@
 // services/userService.js
+
 const {
   tbl_user: User,
   tbl_role: Role,
@@ -12,6 +13,7 @@ const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const s3Service = require("./s3Service");
+const createError = require("http-errors");
 
 exports.createUser = async (userData, file) => {
   const { email, phone, name, gender, dob, address, role } = userData;
@@ -327,4 +329,36 @@ exports.getRoleByUserId = async (userId) => {
       description: role.description,
     },
   };
+=======
+exports.updateAvatarUserLoggedIn = (userId, file) => {
+  let s3Key;
+  return UserHasRole.findOne({ where: { user_id: userId } })
+    .then((userHasRole) => {
+      if (!userHasRole) {
+        throw createError(404, "User not found");
+      }
+      return Role.findByPk(userHasRole.role_id);
+    })
+    .catch((err) => {
+      console.error(err);
+    })
+    .then((role) => {
+      if (!role) {
+        throw createError(404, "Role not found");
+      }
+      s3Key = `${role.name.toLowerCase()}s/${file.originalname}`;
+      return s3Service.uploadFile(s3Key, file.buffer, file.size, file.mimetype);
+    })
+    .then(() => {
+      return User.findByPk(userId).then((user) => {
+        if (!user) {
+          throw createError(404, "User not found");
+        }
+        user.avatar = file.originalname;
+        return user.save();
+      });
+    })
+    .then(() => {
+      return s3Service.getPresignedUrl(s3Key);
+    });
 };

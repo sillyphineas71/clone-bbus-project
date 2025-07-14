@@ -4,6 +4,7 @@ const userController = require("../controller/userController");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const uploadExcel = multer({ dest: "uploads/" });
+
 //GET /user/list
 router.get("/list", userController.getUserList);
 
@@ -22,14 +23,23 @@ router.put("/upd", userController.updateUser);
 //PATCH /user/change-pwd
 router.patch("/change-pwd", userController.changePassword);
 
-//POST /upload-image
+//POST /user/upload-image
 router.post(
   "/upload-image",
   upload.array("avatars"),
   userController.uploadImage
 );
 
-//PATCH /change-status
+
+//PATCH /user/upd-avatar-user-logged-in
+router.patch(
+  "/upd-avatar-user-logged-in",
+  isAuth,
+  upload.array("avatar"),
+  userController.updateAvatarUserLoggedIn
+);
+
+//PATCH /user/change-status
 router.patch("/change-status", userController.changeStatus);
 
 //DELETE /del/{userId}
@@ -37,4 +47,5 @@ router.delete("/del/:userId", userController.deleteUser);
 
 //GET /entity/{userId}
 router.get("/entity/:userId", userController.getEntityByUserId);
+
 module.exports = router;

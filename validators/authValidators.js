@@ -1,25 +1,36 @@
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 const { tbl_user_has_role: UserHasRole, tbl_role: Role } = require("../model");
 
+const ACCESS_SECRET = Buffer.from(process.env.JWT_ACCESS_KEY, "base64");
+
 module.exports.isAuth = (req, res, next) => {
-  const token = req.get("Authorization").split(" ")[1];
-  let decodedToken;
+  const authHeader = req.get("Authorization");
+  if (!authHeader) {
+    return res
+      .status(401)
+      .json({ message: "Not authenticated: no Authorization header" });
+  }
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    return res
+      .status(401)
+      .json({ message: "Not authenticated: bad Authorization format" });
+  }
+  const token = parts[1];
+  let payload;
   try {
-    decodedToken = jwt.verify(token, "uiaaa");
+    payload = jwt.verify(token, ACCESS_SECRET, { algorithms: ["HS256"] });
   } catch (err) {
-    err.statusCode = 500;
-    throw err;
+    return res
+      .status(401)
+      .json({ message: "Not authenticated: invalid or expired token" });
   }
-  if (!decodedToken) {
-    const error = new Error("Not authenticated");
-    error.statusCode = 401;
-    throw error;
-  }
-  req.userId = decodedToken.id;
+  req.userId = payload.userId;
   next();
 };
 
-module.exports = function checkRole(...allowedRoles) {
+module.exports.checkRole = (...allowedRoles) => {
   return (req, res, next) => {
     const userId = req.userId;
     UserHasRole.findAll({
