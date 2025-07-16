@@ -37,3 +37,6 @@ module.exports.login = (SignInRequest) => {
       return new LoginResponse(message, accessToken, refreshToken);
     });
 };
+module.exports.getUserLoggedIn = async (req, res, next) => {
+  return req.userId;
+};

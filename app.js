@@ -29,8 +29,9 @@ app.use((req, res, next) => {
 });
 
 // Middleware
-app.use("/user", require("./routes/UserRoutes"));
+app.use("/user", require("./routes/userRoutes"));
 app.use("/auth", require("./routes/authRoutes"));
+app.use("/parent", require("./routes/parentRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {

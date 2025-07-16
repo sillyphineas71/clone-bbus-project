@@ -329,7 +329,7 @@ exports.getRoleByUserId = async (userId) => {
       description: role.description,
     },
   };
-=======
+};
 exports.updateAvatarUserLoggedIn = (userId, file) => {
   let s3Key;
   return UserHasRole.findOne({ where: { user_id: userId } })
