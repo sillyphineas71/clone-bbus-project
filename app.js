@@ -32,6 +32,8 @@ app.use((req, res, next) => {
 app.use("/user", require("./routes/userRoutes"));
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/parent", require("./routes/parentRoutes"));
+app.use("/driver", require("./routes/driverRoutes"));
+app.use("/assistant", require("./routes/assistantRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
