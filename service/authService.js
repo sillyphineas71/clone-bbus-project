@@ -37,3 +37,26 @@ module.exports.login = (SignInRequest) => {
       return new LoginResponse(message, accessToken, refreshToken);
     });
 };
+
+exports.getRefreshToken = (refreshToken) => {
+  console.info("Get refresh token");
+  if (!refreshToken) {
+    throw createError(400, "Token must be not blank");
+  }
+
+  const phone = jwtService.extractPhone(refreshToken, "REFRESH_TOKEN");
+  return User.findOne({ where: { phone } })
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(createError(404, "User not found"));
+      }
+      const accessToken = jwtService.generateAccessToken(user.phone, user.id);
+      return {
+        accessToken,
+        refreshToken,
+      };
+    })
+    .catch((err) => {
+      throw createError(403, `Access denied: ${err.message}`);
+    });
+};
