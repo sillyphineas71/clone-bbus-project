@@ -18,3 +18,22 @@ module.exports.getAccessToken = (req, res, next) => {
       next(err);
     });
 };
+
+module.exports.getRefreshToken = (req, res, next) => {
+  const refreshToken = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
+  authService
+    .getRefreshToken(refreshToken)
+    .then((newTokens) => {
+      console.log(newTokens);
+      res.json(newTokens);
+    })
+    .catch((err) => {
+      if (err.status)
+        return res.status(err.status).json({ message: err.message });
+      next(err);
+    });
+};

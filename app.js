@@ -12,7 +12,19 @@ console.log("ENV AWS_REGION=", process.env.AWS_REGION);
 const app = express();
 
 // Allow JSON parsing
-app.use(bodyParser.json());
+app.use(
+  bodyParser.json({
+    limit: "10mb",
+  })
+);
+
+// Allow text parsing
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
 
 // Allow CORS
 app.use((req, res, next) => {
@@ -32,8 +44,11 @@ app.use((req, res, next) => {
 app.use("/user", require("./routes/userRoutes"));
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/parent", require("./routes/parentRoutes"));
+app.use("/student", require("./routes/studentRoutes"));
+app.use("/parent", require("./routes/parentRoutes"));
 app.use("/driver", require("./routes/driverRoutes"));
 app.use("/assistant", require("./routes/assistantRoutes"));
+app.use("/bus", require("./routes/busRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
