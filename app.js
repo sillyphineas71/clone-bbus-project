@@ -49,6 +49,8 @@ app.use("/parent", require("./routes/parentRoutes"));
 app.use("/driver", require("./routes/driverRoutes"));
 app.use("/assistant", require("./routes/assistantRoutes"));
 app.use("/bus", require("./routes/busRoutes"));
+app.use("/bus-schedule", require("./routes/busScheduleRoutes"));
+app.use("/event", require("./routes/eventRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
