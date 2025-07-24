@@ -58,9 +58,7 @@ exports.getBusResponse = async (bus) => {
     assistantPhone:
       busResponse.assistant == null ? null : busResponse.assistant.user.phone,
     amountOfStudents:
-      busResponse.amount_of_student == null
-        ? null
-        : busResponse.amount_of_student,
+      busResponse.amount_of_student == null ? 0 : busResponse.amount_of_student,
     routeId: busResponse.route == null ? null : busResponse.route.id,
     routeCode: busResponse.route == null ? null : busResponse.route.code,
     espId: busResponse.esp_id == null ? null : busResponse.esp_id,
@@ -305,3 +303,84 @@ function getEspId(busName) {
 
   return `${formattedNumber}001`;
 }
+exports.updateBus = async (busUpdate) => {
+  const bus = await Bus.findByPk(busUpdate.id);
+  if (!bus) {
+    return {
+      status: 404,
+      message: "Bus not found",
+      data: null,
+    };
+  }
+
+  if (busUpdate.assistantPhone) {
+    const assistant = await Assistant.findOne({
+      include: [
+        {
+          model: User,
+          as: "user",
+          where: { phone: busUpdate.assistantPhone },
+        },
+      ],
+    });
+    if (assistant) {
+      bus.assistant_id = assistant.id;
+    }
+  }
+
+  if (busUpdate.driverPhone) {
+    const driver = await Driver.findOne({
+      include: [
+        {
+          model: User,
+          as: "user",
+          where: { phone: busUpdate.driverPhone },
+        },
+      ],
+    });
+    if (driver) {
+      bus.driver_id = driver.id;
+    }
+  }
+  if (busUpdate.licensePlate) {
+    bus.license_plate = busUpdate.licensePlate;
+  }
+  await bus.save();
+  console.log("Bus:", bus);
+  const busResponse = await this.getBusResponse(bus);
+  console.log("Bus RESPONSE:", busResponse);
+  return {
+    status: 200,
+    message: "bus updated successfully",
+    data: busResponse,
+  };
+};
+exports.changeStatus = async (newStatus) => {
+  const bus = await Bus.findByPk(newStatus.id);
+  if (!bus) {
+    return {
+      status: 404,
+      message: "Bus not found",
+      data: null,
+    };
+  }
+
+  bus.status = String(newStatus.status).toLocaleUpperCase();
+  await bus.save();
+
+  return {
+    status: 200,
+    message: "bus status changed successfully",
+  };
+};
+exports.updateMaxCapacity = async (maxCapacity) => {
+  await Bus.update(
+    { max_capacity: parseInt(maxCapacity) },
+    { where: { id: "00000000-0000-0000-0000-000000000000" } }
+  );
+
+  return {
+    status: 201,
+    message: "max capacity updated successfully",
+  };
+};
