@@ -94,3 +94,59 @@ exports.createBus = async (req, res, next) => {
     res.status(500).json({ status: 500, message: err.message });
   }
 };
+exports.updateBus = async (req, res, next) => {
+  try {
+    const busData = req.body;
+    const result = await busService.updateBus(busData);
+    if (result.status != 200) {
+      return res.status(result.status).json({
+        status: result.status,
+        message: result.message,
+      });
+    }
+    return res.status(200).json({
+      status: result.status,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};
+exports.changeStatus = async (req, res, next) => {
+  try {
+    const busData = req.body;
+    const result = await busService.changeStatus(busData);
+    if (result.status != 200) {
+      return res.status(result.status).json({
+        status: result.status,
+        message: result.message,
+      });
+    }
+    return res.status(200).json({
+      status: result.status,
+      message: result.message,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};
+
+exports.updateMaxCapacityForAllBus = async (req, res, next) => {
+  try {
+    const maxCapacity = req.query.maxCapacity;
+    const result = await busService.updateMaxCapacity(maxCapacity);
+    if (result.status != 201) {
+      return res.status(result.status).json({
+        status: result.status,
+        message: result.message,
+      });
+    }
+    return res.status(201).json({
+      status: result.status,
+      message: result.message,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};

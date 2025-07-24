@@ -38,4 +38,28 @@ router.post(
   checkRole("ADMIN", "SYSADMIN"),
   busController.createBus
 );
+
+//PUT /bus/upd
+router.put(
+  "/upd",
+  isAuth,
+  checkRole("ADMIN", "SYSADMIN"),
+  busController.updateBus
+);
+
+//PATCH /bus/status
+router.patch(
+  "/status",
+  isAuth,
+  checkRole("ADMIN", "SYSADMIN"),
+  busController.changeStatus
+);
+
+//POST bus/upd-max-capacity-for-all-bus
+router.post(
+  "/upd-max-capacity-for-all-bus",
+  isAuth,
+  checkRole("ADMIN", "SYSADMIN"),
+  busController.updateMaxCapacityForAllBus
+);
 module.exports = router;
