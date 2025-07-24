@@ -49,6 +49,7 @@ app.use("/parent", require("./routes/parentRoutes"));
 app.use("/driver", require("./routes/driverRoutes"));
 app.use("/assistant", require("./routes/assistantRoutes"));
 app.use("/bus", require("./routes/busRoutes"));
+app.use("/checkpoint", require("./routes/checkpointRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
