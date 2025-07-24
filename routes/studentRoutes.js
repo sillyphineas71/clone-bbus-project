@@ -30,4 +30,15 @@ router.post(
   studentController.createStudent
 );
 
+//PUT /student/upd
+router.put("/upd", authValidator.isAuth, studentController.updateStudent);
+
+// PATCH /student/change-status
+router.patch(
+  "/change-status",
+  authValidator.isAuth,
+  authValidator.checkRole("SYSADMIN", "ADMIN"),
+  studentController.changeStatus
+);
+
 module.exports = router;

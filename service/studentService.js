@@ -285,3 +285,57 @@ exports.save = (studentCreationRequest) => {
       return student;
     });
 };
+
+exports.update = (studentUpdateRequest) => {
+  return Student.findOne({
+    where: { roll_number: studentUpdateRequest.rollNumber },
+  })
+    .then((student) => {
+      if (student) {
+        if (student.id !== studentUpdateRequest.id) {
+          throw new Error(`A student with this roll number already exists`);
+        }
+        student.id = studentUpdateRequest.id;
+        student.roll_number = studentUpdateRequest.rollNumber;
+        student.class_name = studentUpdateRequest.className;
+        student.name = studentUpdateRequest.name;
+        student.dob = studentUpdateRequest.dob;
+        student.address = studentUpdateRequest.address;
+        student.gender = studentUpdateRequest.gender;
+        if (student.parent_id != null) {
+          return Parent.findByPk(student.parent_id).then((parent) => {
+            if (!parent) {
+              throw new Error("Parent not found");
+            }
+            student.parent_id = studentUpdateRequest.parentId;
+          });
+        }
+        if (student.checkpoint_id != null) {
+          return Checkpoint.findByPk(student.checkpoint_id).then(
+            (checkpoint) => {
+              if (!checkpoint) {
+                throw new Error("Checkpoint not found");
+              }
+              student.checkpoint_id = studentUpdateRequest.checkpointId;
+            }
+          );
+        }
+        return student.save();
+      }
+    })
+    .then((updatedStudent) =>
+      console.log("Student updated successfully:", updatedStudent)
+    )
+    .catch((err) => {
+      throw new Error(err.message);
+    });
+};
+
+exports.changeStatus = ({ id, status }) => {
+  return Student.findByPk(id).then((student) => {
+    if (!student) {
+      throw createError(404, "Không tìm thấy student với id " + id);
+    }
+    return student.update({ status });
+  });
+};

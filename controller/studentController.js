@@ -81,3 +81,54 @@ exports.createStudent = (req, res, next) => {
         .json({ status: err.status || 500, message: err.message });
     });
 };
+
+exports.updateStudent = (req, res, next) => {
+  const studentUpdateRequest = {
+    id: req.body.id,
+    rollNumber: req.body.rollNumber,
+    className: req.body.className,
+    name: req.body.name,
+    dob: req.body.dob,
+    address: req.body.address,
+    gender: req.body.gender,
+    parentId: req.body.parentId,
+    checkpointId: req.body.checkpointId,
+  };
+
+  studentService
+    .update(studentUpdateRequest)
+    .then(() => {
+      res.status(200).json({
+        status: 200,
+        message: "student updated successfully",
+        data: "",
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      res
+        .status(err.status || 500)
+        .json({ status: err.status || 500, message: err.message });
+    });
+};
+
+exports.changeStatus = (req, res, next) => {
+  const { id, status } = req.body;
+  if (!id || !status) {
+    return res.status(400).json({
+      status: 400,
+      message: "Bạn phải truyền cả id và status",
+      data: "",
+    });
+  }
+  studentService
+    .changeStatus({ id, status })
+    .then(() => {
+      res.status(202).json({
+        status: 202,
+        message: "student change status successfully",
+        data: "",
+      });
+    })
+    .catch(next);
+};
