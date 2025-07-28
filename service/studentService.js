@@ -339,3 +339,9 @@ exports.changeStatus = ({ id, status }) => {
     return student.update({ status });
   });
 };
+
+exports.countTotalStudents = () => {
+  return Student.findAndCountAll().then((count) => {
+    return count.count;
+  });
+};
