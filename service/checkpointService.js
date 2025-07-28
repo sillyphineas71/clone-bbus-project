@@ -27,7 +27,6 @@ exports.getCheckpointResponse = async (checkpoint) => {
   const checkpointResponse = await CheckPoint.findOne({
     where: { id: checkpoint.id },
   });
-  console.log("HAHAHAHA", checkpointResponse);
   return {
     id: checkpointResponse.id,
     name: checkpointResponse.name == null ? null : checkpointResponse.name,
@@ -470,7 +469,6 @@ exports.getDetailedWithStudentAndBus = async (checkpointId) => {
       },
     ],
   });
-  console.log("HAHAHAHAH", checkpoint.tbl_students);
   const result = new CheckpointWithStudentAndBusRequest(
     checkpoint.id,
     checkpoint.name,
