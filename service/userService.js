@@ -362,3 +362,36 @@ exports.updateAvatarUserLoggedIn = (userId, file) => {
       return s3Service.getPresignedUrl(s3Key);
     });
 };
+
+module.exports.countTotalUsers = () => {
+  return User.findAndCountAll()
+    .then((result) => {
+      return result.count;
+    })
+    .catch((err) => {
+      console.error("Error counting total users:", err);
+      throw new Error("Database error while counting total users");
+    });
+};
+
+module.exports.countActiveUsers = () => {
+  return User.findAndCountAll({ where: { status: "ACTIVE" } })
+    .then((result) => {
+      return result.count;
+    })
+    .catch((err) => {
+      console.error("Error counting active users:", err);
+      throw new Error("Database error while counting active users");
+    });
+};
+
+module.exports.countInactiveUsers = () => {
+  return User.findAndCountAll({ where: { status: "INACTIVE" } })
+    .then((result) => {
+      return result.count;
+    })
+    .catch((err) => {
+      console.error("Error counting inactive users:", err);
+      throw new Error("Database error while counting inactive users");
+    });
+};

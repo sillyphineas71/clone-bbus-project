@@ -52,7 +52,7 @@ app.use("/bus", require("./routes/busRoutes"));
 app.use("/bus-schedule", require("./routes/busScheduleRoutes"));
 app.use("/event", require("./routes/eventRoutes"));
 app.use("/checkpoint", require("./routes/checkpointRoutes"));
-
+app.use("/dashboard", require("./routes/dashboardRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
