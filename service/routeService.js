@@ -473,3 +473,13 @@ exports.deleteRoute = async (routeId) => {
     message: "Xóa route thành công",
   };
 };
+
+exports.countTotalRoutes = () => {
+  return Route.findAndCountAll()
+    .then((result) => {
+      return result.count;
+    })
+    .catch((error) => {
+      throw new Error("Error counting routes: " + error.message);
+    });
+};

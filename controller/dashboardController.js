@@ -1,6 +1,7 @@
 const studentService = require("../service/studentService");
 const requestService = require("../service/requestService");
 const userService = require("../service/userService");
+const routeService = require("../service/routeService");
 const { request } = require("express");
 
 module.exports.countTotalStudents = (req, res, next) => {
@@ -93,4 +94,20 @@ module.exports.getUserStats = (req, res, next) => {
         },
       });
     });
+};
+
+exports.countTotalBusRoutes = (req, res, next) => {
+  routeService.countTotalRoutes().then((count) => {
+    if (count === 0) {
+      const err = new Error("No bus routes found");
+      err.statusCode = 404;
+      next(err);
+    } else {
+      res.status(200).json({
+        status: 200,
+        message: "Count total bus routes",
+        data: count,
+      });
+    }
+  });
 };

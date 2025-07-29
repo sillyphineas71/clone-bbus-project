@@ -28,7 +28,7 @@ router.get(
 
 //GET /dashboard/count-total-routes
 router.get(
-  "/user-stats",
+  "/count-total-routes",
   authValidator.isAuth,
   authValidator.checkRole("ADMIN", "SYSADMIN"),
   dashboardController.countTotalBusRoutes
