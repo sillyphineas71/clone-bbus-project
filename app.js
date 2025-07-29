@@ -5,6 +5,7 @@ const sequelize = require("./config/database-connect");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const models = require("./model");
+const http = require("http");
 
 console.log("ENV S3_BUCKET=", process.env.S3_BUCKET);
 console.log("ENV AWS_REGION=", process.env.AWS_REGION);
@@ -55,14 +56,19 @@ app.use("/checkpoint", require("./routes/checkpointRoutes"));
 app.use("/dashboard", require("./routes/dashboardRoutes"));
 app.use("/route", require("./routes/routeRoutes"));
 app.use("/request-type", require("./routes/requestTypeRoute"));
+app.use("/request", require("./routes/requestRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.log(error);
   const status = error.statusCode || 500;
-  const message = error.message;
-  const errors = error.data;
-  res.status(status).json({ message: message, errors: errors });
+  res.status(status).json({
+    timestamp: new Date().toISOString(),
+    status,
+    path: req.originalUrl,
+    error: http.STATUS_CODES[status] || "Error",
+    message: error.message,
+    details: error.data || {},
+  });
 });
 
 // Connect to PostgreSQL
