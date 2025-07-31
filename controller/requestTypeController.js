@@ -25,7 +25,6 @@ exports.findAll = async (req, res, next) => {
 exports.getRequestTypeDetail = async (req, res, next) => {
   try {
     const id = req.params.requestTypeId;
-    console.log("qqqqqqq", id);
     const result = await requestTypeService.findById(id);
     if (result.status !== 200) {
       return res.status(result.status).json({ message: result.message });

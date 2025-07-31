@@ -178,8 +178,6 @@ exports.getBusById = async (busId) => {
       message: "Bus ID is required",
     };
   }
-  console.log("Bus ID:", busId);
-
   const bus = await Bus.findOne({
     where: { id: busId },
   });
@@ -189,7 +187,6 @@ exports.getBusById = async (busId) => {
       message: "Bus not found",
     };
   }
-  console.log("Bus:", bus);
   const busResponse = await this.getBusResponse(bus);
   return {
     status: 200,
