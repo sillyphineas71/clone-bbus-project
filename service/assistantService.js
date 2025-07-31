@@ -11,7 +11,7 @@ const {
   tbl_checkpoint: CheckPoint,
   tbl_route: Route,
   tbl_camera: Camera,
-  tbl_attendance: Attendence,
+  tbl_attendance: Attendance,
   tbl_bus_schedule: BusSchedule,
 } = require("../model");
 const Sequelize = require("sequelize");

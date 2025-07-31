@@ -54,6 +54,8 @@ app.use("/event", require("./routes/eventRoutes"));
 app.use("/checkpoint", require("./routes/checkpointRoutes"));
 app.use("/route", require("./routes/routeRoutes"));
 app.use("/request-type", require("./routes/requestTypeRoute"));
+app.use("/attendance", require("./routes/attendanceRoutes"));
+app.use("/camera-request", require("./routes/cameraRequestRoutes"));
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.log(error);
