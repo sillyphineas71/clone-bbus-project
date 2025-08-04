@@ -57,6 +57,8 @@ app.use("/dashboard", require("./routes/dashboardRoutes"));
 app.use("/route", require("./routes/routeRoutes"));
 app.use("/request-type", require("./routes/requestTypeRoute"));
 app.use("/request", require("./routes/requestRoutes"));
+app.use("/attendance", require("./routes/attendanceRoutes"));
+app.use("/camera-request", require("./routes/cameraRequestRoutes"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
