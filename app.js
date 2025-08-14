@@ -56,15 +56,12 @@ app.use("/checkpoint", require("./routes/checkpointRoutes"));
 //app.use("/dashboard", require("./routes/dashboardRoutes"));
 app.use("/route", require("./routes/routeRoutes"));
 app.use("/request-type", require("./routes/requestTypeRoute"));
-<<<<<<< HEAD
 app.use("/request", require("./routes/requestRoutes"));
 app.use("/attendance", require("./routes/attendanceRoutes"));
 app.use("/camera-request", require("./routes/cameraRequestRoutes"));
-
-=======
 app.use("/attendance", require("./routes/attendanceRoutes"));
 app.use("/camera-request", require("./routes/cameraRequestRoutes"));
->>>>>>> backup-tai-branch
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   const status = error.statusCode || 500;

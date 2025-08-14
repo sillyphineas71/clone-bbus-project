@@ -18,8 +18,6 @@ router.get(
   cameraRequestController.createCameraRequest
 );
 
-<<<<<<< HEAD
-=======
 //GET /camera-request/upload-all-unsuccessful
 router.get(
   "/upload-all-unsuccessful",
@@ -28,7 +26,6 @@ router.get(
   cameraRequestController.uploadAllUnsuccessfulCameraRequestDetails
 );
 
->>>>>>> backup-tai-branch
 //GET /camera-request/:{cameraRequestId}
 router.get(
   "/:cameraRequestId",

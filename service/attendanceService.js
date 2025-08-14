@@ -420,8 +420,6 @@ exports.dashboard = async () => {
     data: dashboard,
   };
 };
-<<<<<<< HEAD
-=======
 
 exports.findAllByStudent_Checkpoint_Route_BusSchedules_Bus_IdAndDirectionAndDate =
   async (busId, direction, date) => {
@@ -460,4 +458,3 @@ exports.findByStudent_IdAndDateAndDirection = async (
   });
   return attendance;
 };
->>>>>>> backup-tai-branch
