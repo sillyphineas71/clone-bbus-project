@@ -17,11 +17,21 @@ const {
 } = require("../model");
 const { v4: uuidv4, validate: isUuid } = require("uuid");
 const { Op, where } = require("sequelize");
+<<<<<<< HEAD
+=======
+const mqttService = require("./MqttServiceImpl");
+>>>>>>> backup-tai-branch
 const {
   cameraRequestResponse,
   CameraRequestResponse,
 } = require("../model/dto/response/camerarequest/CameraRequestResponse");
 const CameraRequestPageResponse = require("../model/dto/response/camerarequest/CameraRequestPageResponse");
+<<<<<<< HEAD
+=======
+
+const CameraRequestDetailRepository = require("../repository/CameraRequestDetailRepository");
+
+>>>>>>> backup-tai-branch
 exports.findAll = async (keyword, sort, page, size) => {
   let order = [["id", "ASC"]];
   if (sort) {
@@ -136,3 +146,49 @@ exports.save = async (cameraRData) => {
     data: cameraRequest,
   };
 };
+<<<<<<< HEAD
+=======
+exports.uploadAllUnsuccessfulCameraRequestDetails = async () => {
+  const cameraRequestDetails =
+    await CameraRequestDetailRepository.findLatestUnsuccessfulInsertion();
+  console.log("UIAIAIIA", cameraRequestDetails);
+  let facesluiceId = "";
+  let students = [];
+
+  if (cameraRequestDetails.length === 0) return;
+
+  for (const cameraRequestDetail of cameraRequestDetails) {
+    console.log("KEKEKEKE", cameraRequestDetail);
+    if (facesluiceId === "") {
+      facesluiceId = cameraRequestDetail.facesluice;
+    }
+    console.log("facesluiceId", facesluiceId);
+    if (facesluiceId !== cameraRequestDetail.facesluice) {
+      await mqttService.publishStudentsList(
+        students,
+        "AddPersons",
+        facesluiceId
+      );
+      facesluiceId = cameraRequestDetail.facesluice;
+      students = [];
+    }
+    console.log("ABCD");
+    const student = {
+      id: cameraRequestDetail.studentid,
+      avatar: cameraRequestDetail.dbavatar,
+    };
+    students.push(student);
+
+    if (
+      cameraRequestDetail ===
+      cameraRequestDetails[cameraRequestDetails.length - 1]
+    ) {
+      await mqttService.publishStudentsList(
+        students,
+        "AddPersons",
+        facesluiceId
+      );
+    }
+  }
+};
+>>>>>>> backup-tai-branch

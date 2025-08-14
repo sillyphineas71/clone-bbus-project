@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { isAuth, checkRole } = require("../validators/authValidators");
 const busController = require("../controller/busController");
+const { is } = require("date-fns/locale");
 
 //GET /bus/list
 router.get(
@@ -23,14 +24,6 @@ router.get(
   checkRole("ADMIN", "SYSADMIN"),
   busController.getBusesByRouteId
 );
-//GET /bus/:busId
-router.get(
-  "/:busId",
-  isAuth,
-  checkRole("ADMIN", "SYSADMIN"),
-  busController.getBusDetail
-);
-
 //POST /bus/add
 router.post(
   "/add",
@@ -61,5 +54,20 @@ router.post(
   isAuth,
   checkRole("ADMIN", "SYSADMIN"),
   busController.updateMaxCapacityForAllBus
+);
+//GET /bus/:busId
+router.get(
+  "/:busId",
+  isAuth,
+  checkRole("ADMIN", "SYSADMIN"),
+  busController.getBusDetail
+);
+
+//DELETE bus/:busId
+router.delete(
+  "/:busId",
+  isAuth,
+  checkRole("ADMIN", "SYSADMIN"),
+  busController.deleteBus
 );
 module.exports = router;

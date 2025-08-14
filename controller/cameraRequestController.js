@@ -65,3 +65,17 @@ exports.createCameraRequest = async (req, res, next) => {
     res.status(500).json({ status: 500, message: err.message });
   }
 };
+<<<<<<< HEAD
+=======
+exports.uploadAllUnsuccessfulCameraRequestDetails = async (req, res, next) => {
+  try {
+    await cameraRequestService.uploadAllUnsuccessfulCameraRequestDetails();
+    return res.status(200).json({
+      status: 200,
+      message: "All unsuccessful cameraRequestDetails uploaded successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};
+>>>>>>> backup-tai-branch

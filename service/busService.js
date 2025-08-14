@@ -16,7 +16,8 @@ const {
 const { v4: uuidv4 } = require("uuid");
 const { Op, where } = require("sequelize");
 const BusPageRespone = require("../model/dto/response/bus/BusPageResponse");
-
+const webSocketHandle = require("../config/webSocketHandle");
+const { es, ca } = require("date-fns/locale");
 exports.getBusResponse = async (bus) => {
   const busResponse = await Bus.findOne({
     where: { id: bus.id },
@@ -380,4 +381,48 @@ exports.updateMaxCapacity = async (maxCapacity) => {
     status: 201,
     message: "max capacity updated successfully",
   };
+};
+
+exports.delete = async (id) => {
+  const bus = await Bus.findByPk(id);
+  if (!bus) {
+    throw new Error("Bus not found");
+  }
+  await bus.destroy();
+};
+
+exports.findByCamera_Facesluice = async (facesluice) => {
+  const bus = await Bus.findOne({
+    include: [
+      {
+        model: Camera,
+        as: "tbl_camera",
+        where: { facesluice: facesluice },
+      },
+    ],
+  });
+
+  return bus;
+};
+exports.handleBusLocationMessage = async (BusLocationMessage, topic) => {
+  const espId = topic.substring(
+    topic.lastIndexOf("/", topic.lastIndexOf("/location") - 1) + 1,
+    topic.lastIndexOf("/location")
+  );
+  const bus = await Bus.findOne({
+    where: { esp_id: espId },
+  });
+  if (!bus) {
+    throw new Error("Bus not found for espId: " + espId);
+  }
+  sendMessageToWebSocket(espId, BusLocationMessage.toJsonString());
+};
+
+const sendMessageToWebSocket = (espId, jsonString) => {
+  try {
+    webSocketHandle.broadcast(espId, jsonString);
+    console.log("Message sent to busId " + espId + ": " + jsonString);
+  } catch (error) {
+    throw new Error("Failed to send message to WebSocket for busId: " + espId);
+  }
 };

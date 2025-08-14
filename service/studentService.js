@@ -6,9 +6,14 @@ const {
   tbl_checkpoint: Checkpoint,
   tbl_bus: Bus,
   tbl_user: User,
+  tbl_camera: Camera,
+  tbl_camera_request: CameraRequest,
+  tbl_camera_request_detail: CameraRequestDetail,
 } = require("../model");
 const s3Service = require("../service/s3Service");
 const { v4: uuidv4 } = require("uuid");
+const mqttService = require("./MqttServiceImpl");
+const ExcelHelper = require("../util/excelHelper");
 
 module.exports.findAll = (keyword, sort = "id:asc", page = 0, size = 10) => {
   const [field = "id", dir = "asc"] = sort.split(":");
@@ -344,4 +349,83 @@ exports.countTotalStudents = () => {
   return Student.findAndCountAll().then((count) => {
     return count.count;
   });
+};
+
+exports.updateAvatar = async (studentUpdateAvatarRequest) => {
+  const { id, avatar } = studentUpdateAvatarRequest;
+  const student = await Student.findOne({
+    where: { id: id },
+    include: [
+      {
+        model: Bus,
+        as: "bus",
+        include: [
+          {
+            model: Camera,
+            as: "tbl_camera",
+          },
+        ],
+      },
+    ],
+  });
+  const fileName = avatar.originalname; // same getOriginalFilename()
+  student.avatar = fileName;
+  await student.save();
+  try {
+    s3Service.uploadFile(
+      "students/" + fileName,
+      file.buffer,
+      file.size,
+      file.mimetype
+    );
+  } catch (err) {
+    console.error("Upload student image failed while updating: " + err.message);
+  }
+  if (student.bus && student.bus.tbl_camera) {
+    const cameraRequest = {
+      id: uuidv4(),
+      camera_id: student.bus.tbl_camera.facesluice,
+      status: "FAILED",
+      request_type: "EDIT",
+    };
+    const cameraRequestSave = await CameraRequest.create(cameraRequest);
+    const cameraRequestDetail = {
+      camera_request_id: cameraRequestSave.id,
+      student_id: student.id,
+      avatar: fileName,
+      err_code: 1,
+      person_type: 0,
+      name: student.name,
+      roll_number: student.roll_number,
+    };
+    const cameraRequestDetailSave = await CameraRequestDetail.create(
+      cameraRequestDetail
+    );
+    mqttService.publishStudentsList(
+      [student],
+      "EditPersons",
+      student.bus.tbl_camera.facesluice
+    );
+  }
+  return s3Service.generatePresignedUrl("students/" + fileName);
+};
+
+exports.importStudentsFromFile = async (file) => {
+  const result = await ExcelHelper.excelToStudents(file);
+  console.log("UIAIAIAI", result);
+  // Nếu có lỗi -> throw exception
+  if (result.errorRows.length > 0) {
+    throw new ImportException(
+      "Import thất bại với nhiều lỗi trong file",
+      result.errorRows
+    );
+  }
+
+  // Nếu hợp lệ -> insert vào DB
+  const insertedStudents = [];
+  for (const student of result.validStudents) {
+    const saved = await student.save();
+    insertedStudents.push(saved);
+  }
+  return insertedStudents;
 };
