@@ -28,3 +28,14 @@ module.exports.getPresignedUrl = function (key) {
   });
   return getSignedUrl(s3, command, { expiresIn: 360000 });
 };
+module.exports.generatePresignedUrl = async function (key) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET,
+    Key: key,
+  });
+  const durationMinutes = parseInt(process.env.AWS_DURATION_MINUTES);
+  // durationMinutes -> giây
+  const expiresInSeconds = durationMinutes * 60;
+
+  return await getSignedUrl(s3, command, { expiresIn: expiresInSeconds });
+};

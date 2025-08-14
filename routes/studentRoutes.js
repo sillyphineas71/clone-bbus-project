@@ -3,7 +3,7 @@ const studentController = require("../controller/studentController");
 const authValidator = require("../validators/authValidators");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
-
+const uploadExcel = multer({ dest: "uploads/" });
 //GET /student/list
 router.get("/list", studentController.getList);
 
@@ -12,13 +12,6 @@ router.get(
   "/by-bus",
   authValidator.checkRole("ADMIN", "SYSADMIN"),
   studentController.getStudentsByBusId
-);
-
-//GET /student/:studentId
-router.get(
-  "/:studentId",
-  authValidator.isAuth,
-  studentController.getStudentDetail
 );
 
 //POST /student/add
@@ -40,5 +33,27 @@ router.patch(
   authValidator.checkRole("SYSADMIN", "ADMIN"),
   studentController.changeStatus
 );
+//POST /student/import
+router.post(
+  "/import",
+  upload.single("file"),
+  authValidator.isAuth,
+  authValidator.checkRole("SYSADMIN", "ADMIN"),
+  studentController.importStudents
+);
 
+//PATCH /student/update-avatar
+router.patch(
+  "/update-avatar",
+  authValidator.isAuth,
+  authValidator.checkRole("SYSADMIN", "ADMIN"),
+  upload.single("avatar"),
+  studentController.updateAvatar
+);
+//GET /student/:studentId
+router.get(
+  "/:studentId",
+  authValidator.isAuth,
+  studentController.getStudentDetail
+);
 module.exports = router;

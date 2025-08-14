@@ -18,6 +18,14 @@ router.get(
   cameraRequestController.createCameraRequest
 );
 
+//GET /camera-request/upload-all-unsuccessful
+router.get(
+  "/upload-all-unsuccessful",
+  isAuth,
+  checkRole("SYSADMIN", "ADMIN"),
+  cameraRequestController.uploadAllUnsuccessfulCameraRequestDetails
+);
+
 //GET /camera-request/:{cameraRequestId}
 router.get(
   "/:cameraRequestId",

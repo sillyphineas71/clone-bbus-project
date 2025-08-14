@@ -17,11 +17,15 @@ const {
 } = require("../model");
 const { v4: uuidv4, validate: isUuid } = require("uuid");
 const { Op, where } = require("sequelize");
+const mqttService = require("./MqttServiceImpl");
 const {
   cameraRequestResponse,
   CameraRequestResponse,
 } = require("../model/dto/response/camerarequest/CameraRequestResponse");
 const CameraRequestPageResponse = require("../model/dto/response/camerarequest/CameraRequestPageResponse");
+
+const CameraRequestDetailRepository = require("../repository/CameraRequestDetailRepository");
+
 exports.findAll = async (keyword, sort, page, size) => {
   let order = [["id", "ASC"]];
   if (sort) {
@@ -135,4 +139,47 @@ exports.save = async (cameraRData) => {
     message: "Camera request created successfully",
     data: cameraRequest,
   };
+};
+exports.uploadAllUnsuccessfulCameraRequestDetails = async () => {
+  const cameraRequestDetails =
+    await CameraRequestDetailRepository.findLatestUnsuccessfulInsertion();
+  console.log("UIAIAIIA", cameraRequestDetails);
+  let facesluiceId = "";
+  let students = [];
+
+  if (cameraRequestDetails.length === 0) return;
+
+  for (const cameraRequestDetail of cameraRequestDetails) {
+    console.log("KEKEKEKE", cameraRequestDetail);
+    if (facesluiceId === "") {
+      facesluiceId = cameraRequestDetail.facesluice;
+    }
+    console.log("facesluiceId", facesluiceId);
+    if (facesluiceId !== cameraRequestDetail.facesluice) {
+      await mqttService.publishStudentsList(
+        students,
+        "AddPersons",
+        facesluiceId
+      );
+      facesluiceId = cameraRequestDetail.facesluice;
+      students = [];
+    }
+    console.log("ABCD");
+    const student = {
+      id: cameraRequestDetail.studentid,
+      avatar: cameraRequestDetail.dbavatar,
+    };
+    students.push(student);
+
+    if (
+      cameraRequestDetail ===
+      cameraRequestDetails[cameraRequestDetails.length - 1]
+    ) {
+      await mqttService.publishStudentsList(
+        students,
+        "AddPersons",
+        facesluiceId
+      );
+    }
+  }
 };

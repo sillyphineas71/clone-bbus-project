@@ -420,3 +420,41 @@ exports.dashboard = async () => {
     data: dashboard,
   };
 };
+
+exports.findAllByStudent_Checkpoint_Route_BusSchedules_Bus_IdAndDirectionAndDate =
+  async (busId, direction, date) => {
+    const attendances = await Attendance.findAll({
+      where: {
+        bus_id: busId,
+        direction: direction,
+        date: date,
+      },
+    });
+    return attendances;
+  };
+exports.findAllByStudent_IdAndDate = async (studentId, date) => {
+  const attendances = await Attendance.findAll({
+    where: {
+      student_id: studentId,
+      date: date,
+    },
+  });
+  return attendances;
+};
+exports.save = async (attendance) => {
+  return await Attendance.save(attendance);
+};
+exports.findByStudent_IdAndDateAndDirection = async (
+  studentId,
+  date,
+  direction
+) => {
+  const attendance = await Attendance.findOne({
+    where: {
+      student_id: studentId,
+      date: date,
+      direction: direction,
+    },
+  });
+  return attendance;
+};

@@ -150,3 +150,16 @@ exports.updateMaxCapacityForAllBus = async (req, res, next) => {
     res.status(500).json({ status: 500, message: err.message });
   }
 };
+
+exports.deleteBus = async (req, res, next) => {
+  try {
+    const busId = req.params.busId;
+    await busService.getBusById(busId);
+    return res.status(200).json({
+      status: 200,
+      message: "bus deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};

@@ -1,7 +1,8 @@
 const { tbl_student: Student } = require("../model");
 const { Op } = require("sequelize");
 const studentService = require("../service/studentService");
-
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 exports.getList = (req, res, next) => {
   const { keyword, sort, page = 0, size = 10 } = req.query;
   const pageNum = parseInt(page, 10);
@@ -131,4 +132,39 @@ exports.changeStatus = (req, res, next) => {
       });
     })
     .catch(next);
+};
+
+exports.updateAvatar = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+
+    // File upload
+    const file = req.file;
+    const studentUpdateAvatarRequest = {
+      id: id,
+      avatar: file,
+    };
+
+    const result = await studentService.updateAvatar(
+      studentUpdateAvatarRequest
+    );
+    return res.status(200).json({
+      status: 202,
+      message: "student change status successfully",
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
+};
+exports.importStudents = async (req, res, next) => {
+  try {
+    const result = await studentService.importStudentsFromFile(req.file);
+    if (result.status !== 202) {
+      return res.status(result.status).json(result);
+    }
+    return res.status(202).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
